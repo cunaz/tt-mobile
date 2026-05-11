@@ -36,6 +36,7 @@ export default function model() {
       team: get("team"),
       player: get("player"),
       elo: get("elo"),
+      eloHistory: get("eloHistory"),
       me: () => {
         const href = me();
         return href ? get("me")(href) : null;
@@ -49,6 +50,9 @@ export default function model() {
       },
       clubTeams(id) {
         return fetch(`${API_ORIGIN}/club-teams/${id}`).then(asJson);
+      },
+      clubElo(id) {
+        return fetch(`${API_ORIGIN}/club-elo/${id}`).then(asJson);
       },
     },
   };

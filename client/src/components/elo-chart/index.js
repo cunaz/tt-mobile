@@ -43,7 +43,7 @@ const project = curry((points, [x, y]) => [
 
 const asString = compose(join(","), map(join(",")));
 
-export default function EloChart({ data = [], startDate, endDate }) {
+export default function EloChart({ data = [], startDate, endDate, seasons }) {
   if (!data || !data.length) {
     return;
   }
@@ -51,6 +51,10 @@ export default function EloChart({ data = [], startDate, endDate }) {
   const process = map(project(points));
 
   const view = compose(asString, process)(points);
+  const seasonMarkers = (seasons || []).slice(1).map((s) => ({
+    x: projectX(s.startIndex, points),
+    label: s.startDate,
+  }));
   const projectLines = map(({ label, y }) => ({
     label,
     pos: projectY(y, points),
@@ -88,6 +92,17 @@ export default function EloChart({ data = [], startDate, endDate }) {
             stroke="#757575"
           />
         ))}
+      {seasonMarkers.map(({ x }) => (
+        <line
+          x1={x}
+          y1="0"
+          x2={x}
+          y2="190"
+          strokeWidth="1"
+          stroke="#bdbdbd"
+          strokeDasharray="3,3"
+        />
+      ))}
       <polyline fill="none" stroke="#FF5252" strokeWidth="3" points={view} />
       <text x="25" y="200" fontSize="12" fill="grey">
         {startDate}

@@ -57,6 +57,7 @@ const endpoints = [
   "game",
   "player",
   "elo",
+  "eloHistory",
   "me",
 ];
 
@@ -91,6 +92,14 @@ app.get("/club-teams/:id", async ({ params }, res) => {
     res.json(await scraper.clubTeams(params.id));
   } catch (e) {
     console.error(e);
+  }
+});
+
+app.get("/club-elo/:id", async ({ params }, res, next) => {
+  try {
+    res.json(await scraper.clubElo(params.id));
+  } catch (e) {
+    next(e);
   }
 });
 

@@ -52,7 +52,7 @@ const formatTime = (obj) => ({
 // strip "/cgi-bin/WebObjects/nuLigaTTCH.woa/wa/" from URL
 const simplify = (href) => (href ? href.substring(href.lastIndexOf("/")) : "");
 
-const toArray = (arr) => (Array.isArray(arr) ? arr : []);
+const toArray = (arr) => (Array.isArray(arr) ? arr : arr ? [arr] : []);
 
 const splitTitle = (title) => {
   return title
@@ -657,6 +657,115 @@ function eloDiff(eloA, eloB, won = true) {
   return won ? 15 * (1 - pToWin) : -15 * pToWin;
 }
 
+const WA_PREFIX = "/cgi-bin/WebObjects/nuLigaTTCH.woa/wa";
+const denormalize = (href) => (href ? `${WA_PREFIX}${href}` : null);
+
+function eloHistory({ url }) {
+  return player({ url }).then(async (current) => {
+    const seasonHrefs = (current.seasons || [])
+      .map((s) => s.href)
+      .filter(Boolean);
+
+    const otherPlayers = await Promise.all(
+      seasonHrefs.map((href) =>
+        player({ url: denormalize(href) }).catch(() => null),
+      ),
+    );
+
+    const eloHrefs = [];
+    [current, ...otherPlayers].forEach((p) => {
+      if (p && p.eloHref && !eloHrefs.includes(p.eloHref)) {
+        eloHrefs.push(p.eloHref);
+      }
+    });
+
+    const eloResults = await Promise.all(
+      eloHrefs.map((href) =>
+        elo({ url: denormalize(href) }).catch(() => null),
+      ),
+    );
+
+    const valid = eloResults
+      .filter((e) => e && Array.isArray(e.data) && e.data.length)
+      .sort((a, b) => {
+        const da = moment(a.startDate, "DD.MM.YYYY");
+        const db = moment(b.startDate, "DD.MM.YYYY");
+        return da.diff(db);
+      });
+
+    const data = [];
+    const seasons = [];
+    valid.forEach((e) => {
+      seasons.push({
+        startIndex: data.length,
+        startDate: e.startDate,
+        endDate: e.endDate,
+        length: e.data.length,
+      });
+      data.push(...e.data);
+    });
+
+    return {
+      data,
+      startDate: valid[0]?.startDate,
+      endDate: valid[valid.length - 1]?.endDate,
+      seasons,
+    };
+  });
+}
+
+function clubElo(id) {
+  return clubTeams(id).then(async (data) => {
+    const teamHrefs = (data.teams || []).map((t) => t.href).filter(Boolean);
+
+    const teams = await Promise.all(
+      teamHrefs.map((href) =>
+        team({ url: denormalize(href) }).catch(() => null),
+      ),
+    );
+
+    const playerMap = new Map();
+    teams.forEach((t) => {
+      if (!t || !t.players) return;
+      t.players.forEach((p) => {
+        if (p.href && !playerMap.has(p.href)) playerMap.set(p.href, p);
+      });
+    });
+
+    const results = await Promise.all(
+      [...playerMap.values()].map(async (p) => {
+        const pData = await player({ url: denormalize(p.href) }).catch(
+          () => null,
+        );
+        if (!pData || !pData.eloHref) return null;
+        const eloData = await elo({
+          url: denormalize(pData.eloHref),
+        }).catch(() => null);
+        if (!eloData || !eloData.data || eloData.data.length < 2) return null;
+        const startElo = eloData.data[0];
+        const endElo = eloData.data[eloData.data.length - 1];
+        return {
+          name: p.name,
+          href: p.href,
+          classification: p.classification,
+          startElo: Math.round(startElo),
+          endElo: Math.round(endElo),
+          delta: Math.round((endElo - startElo) * 10) / 10,
+          startDate: eloData.startDate,
+          endDate: eloData.endDate,
+        };
+      }),
+    );
+
+    const players = results.filter(Boolean).sort((a, b) => b.endElo - a.endElo);
+
+    return {
+      name: data.name,
+      players,
+    };
+  });
+}
+
 function me({ url }) {
   return new Promise((res, rej) => {
     osmosis
@@ -849,6 +958,8 @@ module.exports = {
   game,
   player,
   elo,
+  eloHistory,
+  clubElo,
   me,
   search,
   regionSchedule,
