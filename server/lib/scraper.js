@@ -52,7 +52,7 @@ const formatTime = (obj) => ({
 // strip "/cgi-bin/WebObjects/nuLigaTTCH.woa/wa/" from URL
 const simplify = (href) => (href ? href.substring(href.lastIndexOf("/")) : "");
 
-const toArray = (arr) => (Array.isArray(arr) ? arr : []);
+const toArray = (arr) => (Array.isArray(arr) ? arr : arr ? [arr] : []);
 
 const splitTitle = (title) => {
   return title
