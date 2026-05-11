@@ -44,14 +44,6 @@ class Club extends Component {
           ) : (
             <Teams {...clubTeams} />
           )}
-          <h2 class="subtitle">Elo-Veränderung (Saison)</h2>
-          {pending && pending.clubElo ? (
-            <Loading />
-          ) : clubElo && clubElo.players && clubElo.players.length ? (
-            <ClubEloChart players={clubElo.players} />
-          ) : (
-            <p class="has-text-grey">(Keine Daten)</p>
-          )}
           {pending && pending.club ? (
             <Loading />
           ) : (
@@ -62,6 +54,14 @@ class Club extends Component {
               <Schedule chunks={club && club.nextMatches} />
               <Embed param="club-id" url={id} />
             </div>
+          )}
+          <h2 class="subtitle">Elo-Veränderung (Saison)</h2>
+          {pending && pending.clubElo ? (
+            <Loading />
+          ) : clubElo && clubElo.players && clubElo.players.length ? (
+            <ClubEloChart players={clubElo.players} />
+          ) : (
+            <p class="has-text-grey">(Keine Daten)</p>
           )}
         </Container>
         <Footer />
