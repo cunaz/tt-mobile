@@ -38,7 +38,7 @@ export default class Player extends Component {
           this.setState({
             pending: false,
             rejected: { data: error },
-          }),
+          })
         );
     } else {
       get("elo")(href)
@@ -53,7 +53,7 @@ export default class Player extends Component {
           this.setState({
             pending: false,
             rejected: { data: error },
-          }),
+          })
         );
     }
   }

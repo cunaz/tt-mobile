@@ -40,7 +40,7 @@ export default class Home extends Component {
               <li>App für neue Spielsaison angepasst</li>
               <li>Neue Elo-Skala hinterlegt (B, C, D)</li>
               <li>
-                Spielerseite: "Klassierung (aktuell)" zeigt neu auch
+                Spielerseite: &quot;Klassierung (aktuell)&quot; zeigt neu auch
                 Damen-Klassierung
               </li>
             </ul>

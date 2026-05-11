@@ -1,6 +1,8 @@
 import { h } from "preact";
+import { useState, useCallback } from "preact/hooks";
 
 import clientHref from "../../lib/link";
+import { get } from "../../lib/model";
 
 import Loading from "../../components/loading";
 import LinkRow from "../../components/link-row/";
@@ -17,8 +19,30 @@ export default function PlayerOverview({
   teams,
   elo,
   gender,
+  href,
 }) {
   const latestElo = elo && Math.round(elo.data[elo.data.length - 1]);
+  const [view, setView] = useState("season");
+  const [history, setHistory] = useState(null);
+  const [historyPending, setHistoryPending] = useState(false);
+
+  const showLifelong = useCallback(() => {
+    setView("lifelong");
+    if (history || historyPending || !href) return;
+    setHistoryPending(true);
+    get("eloHistory")(href)
+      .then((data) => {
+        setHistory(data);
+        setHistoryPending(false);
+      })
+      .catch(() => setHistoryPending(false));
+  }, [history, historyPending, href]);
+
+  const showSeason = useCallback(() => setView("season"), []);
+
+  const chartData =
+    view === "lifelong" && history ? history : view === "season" ? elo : null;
+
   return (
     <div>
       <Table>
@@ -46,8 +70,18 @@ export default function PlayerOverview({
           )}
         </tr>
       </Table>
-      <div style="margin: 1rem 0;">
-        {elo ? <EloChart {...elo} /> : <Loading />}
+      <div class="tabs is-toggle is-small" style="margin-top: 1rem;">
+        <ul>
+          <li class={view === "season" ? "is-active" : ""}>
+            <a onClick={showSeason}>Saison</a>
+          </li>
+          <li class={view === "lifelong" ? "is-active" : ""}>
+            <a onClick={showLifelong}>Lebenslang</a>
+          </li>
+        </ul>
+      </div>
+      <div style="margin: 0.5rem 0 1rem;">
+        {chartData ? <EloChart {...chartData} /> : <Loading />}
       </div>
       <h2 class="subtitle">Mannschaftseinsätze</h2>
       <Table>

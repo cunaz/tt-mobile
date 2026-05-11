@@ -657,6 +657,63 @@ function eloDiff(eloA, eloB, won = true) {
   return won ? 15 * (1 - pToWin) : -15 * pToWin;
 }
 
+const WA_PREFIX = "/cgi-bin/WebObjects/nuLigaTTCH.woa/wa";
+const denormalize = (href) => (href ? `${WA_PREFIX}${href}` : null);
+
+function eloHistory({ url }) {
+  return player({ url }).then(async (current) => {
+    const seasonHrefs = (current.seasons || [])
+      .map((s) => s.href)
+      .filter(Boolean);
+
+    const otherPlayers = await Promise.all(
+      seasonHrefs.map((href) =>
+        player({ url: denormalize(href) }).catch(() => null),
+      ),
+    );
+
+    const eloHrefs = [];
+    [current, ...otherPlayers].forEach((p) => {
+      if (p && p.eloHref && !eloHrefs.includes(p.eloHref)) {
+        eloHrefs.push(p.eloHref);
+      }
+    });
+
+    const eloResults = await Promise.all(
+      eloHrefs.map((href) =>
+        elo({ url: denormalize(href) }).catch(() => null),
+      ),
+    );
+
+    const valid = eloResults
+      .filter((e) => e && Array.isArray(e.data) && e.data.length)
+      .sort((a, b) => {
+        const da = moment(a.startDate, "DD.MM.YYYY");
+        const db = moment(b.startDate, "DD.MM.YYYY");
+        return da.diff(db);
+      });
+
+    const data = [];
+    const seasons = [];
+    valid.forEach((e) => {
+      seasons.push({
+        startIndex: data.length,
+        startDate: e.startDate,
+        endDate: e.endDate,
+        length: e.data.length,
+      });
+      data.push(...e.data);
+    });
+
+    return {
+      data,
+      startDate: valid[0]?.startDate,
+      endDate: valid[valid.length - 1]?.endDate,
+      seasons,
+    };
+  });
+}
+
 function me({ url }) {
   return new Promise((res, rej) => {
     osmosis
@@ -849,6 +906,7 @@ module.exports = {
   game,
   player,
   elo,
+  eloHistory,
   me,
   search,
   regionSchedule,

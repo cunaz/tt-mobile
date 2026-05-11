@@ -36,6 +36,7 @@ export default function model() {
       team: get("team"),
       player: get("player"),
       elo: get("elo"),
+      eloHistory: get("eloHistory"),
       me: () => {
         const href = me();
         return href ? get("me")(href) : null;

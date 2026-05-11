@@ -57,6 +57,7 @@ const endpoints = [
   "game",
   "player",
   "elo",
+  "eloHistory",
   "me",
 ];
 
