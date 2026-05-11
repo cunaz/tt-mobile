@@ -714,6 +714,58 @@ function eloHistory({ url }) {
   });
 }
 
+function clubElo(id) {
+  return clubTeams(id).then(async (data) => {
+    const teamHrefs = (data.teams || []).map((t) => t.href).filter(Boolean);
+
+    const teams = await Promise.all(
+      teamHrefs.map((href) =>
+        team({ url: denormalize(href) }).catch(() => null),
+      ),
+    );
+
+    const playerMap = new Map();
+    teams.forEach((t) => {
+      if (!t || !t.players) return;
+      t.players.forEach((p) => {
+        if (p.href && !playerMap.has(p.href)) playerMap.set(p.href, p);
+      });
+    });
+
+    const results = await Promise.all(
+      [...playerMap.values()].map(async (p) => {
+        const pData = await player({ url: denormalize(p.href) }).catch(
+          () => null,
+        );
+        if (!pData || !pData.eloHref) return null;
+        const eloData = await elo({
+          url: denormalize(pData.eloHref),
+        }).catch(() => null);
+        if (!eloData || !eloData.data || eloData.data.length < 2) return null;
+        const startElo = eloData.data[0];
+        const endElo = eloData.data[eloData.data.length - 1];
+        return {
+          name: p.name,
+          href: p.href,
+          classification: p.classification,
+          startElo: Math.round(startElo),
+          endElo: Math.round(endElo),
+          delta: Math.round((endElo - startElo) * 10) / 10,
+          startDate: eloData.startDate,
+          endDate: eloData.endDate,
+        };
+      }),
+    );
+
+    const players = results.filter(Boolean).sort((a, b) => b.endElo - a.endElo);
+
+    return {
+      name: data.name,
+      players,
+    };
+  });
+}
+
 function me({ url }) {
   return new Promise((res, rej) => {
     osmosis
@@ -907,6 +959,7 @@ module.exports = {
   player,
   elo,
   eloHistory,
+  clubElo,
   me,
   search,
   regionSchedule,

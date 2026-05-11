@@ -14,6 +14,7 @@ import ErrorPage from "../../components/error-page";
 import LinkRow from "../../components/link-row/";
 import Table from "../../components/table";
 import Schedule from "../../components/schedule";
+import ClubEloChart from "../../components/club-elo-chart";
 
 import { API_ORIGIN } from "../../lib/model";
 
@@ -21,12 +22,17 @@ export default
 @wire("model", {
   club: ["api.club", "id"],
   clubTeams: ["api.clubTeams", "id"],
+  clubElo: ["api.clubElo", "id"],
 })
 class Club extends Component {
-  render({ pending, rejected, back, club, clubTeams, id }) {
-    if (pending && Object.keys(pending).length >= 2)
+  render({ pending, rejected, back, club, clubTeams, clubElo, id }) {
+    if (pending && pending.club && pending.clubTeams)
       return <LoadingPage back={back} />;
-    if (rejected && Object.keys(rejected).length > 0)
+    if (
+      rejected &&
+      (rejected.club || rejected.clubTeams) &&
+      Object.keys(rejected).length > 0
+    )
       return <ErrorPage info={rejected} />;
 
     return (
@@ -37,6 +43,14 @@ class Club extends Component {
             <Loading />
           ) : (
             <Teams {...clubTeams} />
+          )}
+          <h2 class="subtitle">Elo-Veränderung (Saison)</h2>
+          {pending && pending.clubElo ? (
+            <Loading />
+          ) : clubElo && clubElo.players && clubElo.players.length ? (
+            <ClubEloChart players={clubElo.players} />
+          ) : (
+            <p class="has-text-grey">(Keine Daten)</p>
           )}
           {pending && pending.club ? (
             <Loading />

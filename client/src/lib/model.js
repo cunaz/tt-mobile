@@ -51,6 +51,9 @@ export default function model() {
       clubTeams(id) {
         return fetch(`${API_ORIGIN}/club-teams/${id}`).then(asJson);
       },
+      clubElo(id) {
+        return fetch(`${API_ORIGIN}/club-elo/${id}`).then(asJson);
+      },
     },
   };
 }
