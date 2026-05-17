@@ -723,20 +723,27 @@ function teamPortraitsForClub(groupHref, clubId) {
   return new Promise((res) => {
     osmosis
       .get(resolve(host, groupHref))
-      .find("#content")
       .set({
-        portraits: osmosis
-          .find(
-            `tr:has(a[href*="clubInfoDisplay?club=${clubId}"]) a[href*="teamPortrait?"]`,
-          )
-          .set({ href: "@href" }),
+        rows: osmosis.find("tr").set({
+          links: osmosis.find("a").set({ href: "@href" }),
+        }),
       })
       .error(error("scraping error in teamPortraitsForClub, continuing anyway"))
-      .data((d) => {
-        const hrefs = toArray(d && d.portraits)
-          .map((p) => p && p.href)
-          .filter(Boolean);
-        res([...new Set(hrefs)]);
+      .data((data) => {
+        const result = [];
+        toArray(data && data.rows).forEach((row) => {
+          const hrefs = toArray(row.links)
+            .map((l) => l && l.href)
+            .filter(Boolean);
+          if (
+            hrefs.some((h) => h.includes(`clubInfoDisplay?club=${clubId}`))
+          ) {
+            hrefs
+              .filter((h) => h.includes("teamPortrait?"))
+              .forEach((h) => result.push(h));
+          }
+        });
+        res([...new Set(result)]);
       })
       .done(() => res([]));
   });
