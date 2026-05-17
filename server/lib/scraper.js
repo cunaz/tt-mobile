@@ -719,32 +719,25 @@ function eloHistory({ url }) {
   });
 }
 
-function teamPortraitsForClub(groupHref, clubId) {
+async function teamPortraitsForClub(groupHref, clubId) {
   const url = resolve(host, groupHref);
-  return new Promise((res) => {
-    const result = [];
-    let matchedRows = 0;
-    osmosis
-      .get(url)
-      .find("tr")
-      .set({
-        clubHref: `a[href*="clubInfoDisplay?club=${clubId}"]@href`,
-        portraitHref: 'a[href*="teamPortrait?"]@href',
-      })
-      .data((row) => {
-        if (row && row.clubHref && row.portraitHref) {
-          matchedRows++;
-          result.push(row.portraitHref);
-        }
-      })
-      .done(() => {
-        const unique = [...new Set(result)];
-        console.log(
-          `[teamPortraitsForClub] clubId=${clubId} matchedRows=${matchedRows} portraits=${unique.length} url=${url}`,
-        );
-        res(unique);
-      });
-  });
+  try {
+    const html = await fetch(url).then((r) => r.text());
+    const rows = html.match(/<tr\b[\s\S]*?<\/tr>/gi) || [];
+    const clubMarker = `clubInfoDisplay?club=${clubId}`;
+    const portraitRegex = /href="([^"]*teamPortrait\?[^"]*)"/gi;
+    const portraits = [];
+    rows.forEach((row) => {
+      if (!row.includes(clubMarker)) return;
+      for (const m of row.matchAll(portraitRegex)) {
+        portraits.push(m[1].replace(/&amp;/g, "&"));
+      }
+    });
+    return [...new Set(portraits)];
+  } catch (e) {
+    console.error("teamPortraitsForClub failed", url, e.message);
+    return [];
+  }
 }
 
 function clubElo(id) {
