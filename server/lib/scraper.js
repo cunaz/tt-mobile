@@ -733,31 +733,20 @@ function httpsGet(url) {
   });
 }
 
-async function teamPortraitsForClub(groupHref, clubId) {
+async function teamPortraitsForClub(groupHref, clubName) {
   const url = resolve(host, groupHref);
-  console.log(`[teamPortraitsForClub] start clubId=${clubId} url=${url}`);
   try {
     const html = await httpsGet(url);
-    const rows = html.match(/<tr\b[\s\S]*?<\/tr>/gi) || [];
-    const clubMarker = `clubInfoDisplay?club=${clubId}`;
-    const portraitRegex = /href="([^"]*teamPortrait\?[^"]*)"/gi;
-    const portraits = [];
-    let matched = 0;
-    rows.forEach((row) => {
-      if (!row.includes(clubMarker)) return;
-      matched++;
-      if (matched === 1) {
-        console.log(`[teamPortraitsForClub] sample row:`, row.slice(0, 800));
-      }
-      for (const m of row.matchAll(portraitRegex)) {
-        portraits.push(m[1].replace(/&amp;/g, "&"));
-      }
-    });
-    const unique = [...new Set(portraits)];
-    console.log(
-      `[teamPortraitsForClub] done clubId=${clubId} htmlLen=${html.length} rows=${rows.length} matched=${matched} portraits=${unique.length}`,
+    const escaped = clubName.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+    const regex = new RegExp(
+      `href="([^"]*teamPortrait\\?[^"]*)"[^>]*>\\s*${escaped}[^<]*</a>`,
+      "gi",
     );
-    return unique;
+    const portraits = [];
+    for (const m of html.matchAll(regex)) {
+      portraits.push(m[1].replace(/&amp;/g, "&"));
+    }
+    return [...new Set(portraits)];
   } catch (e) {
     console.error("[teamPortraitsForClub] failed", url, e.message);
     return [];
@@ -770,7 +759,7 @@ function clubElo(id) {
 
     const portraitHrefArrays = await Promise.all(
       groupHrefs.map((href) =>
-        teamPortraitsForClub(denormalize(href), id).catch(() => []),
+        teamPortraitsForClub(denormalize(href), data.name).catch(() => []),
       ),
     );
     const portraitHrefs = [...new Set(portraitHrefArrays.flat())];
