@@ -763,11 +763,16 @@ function clubElo(id) {
       ),
     );
     const portraitHrefs = [...new Set(portraitHrefArrays.flat())];
+    console.log(`[clubElo] portraitHrefs:`, portraitHrefs);
 
     const teams = await Promise.all(
       portraitHrefs.map((href) =>
         team({ url: href }).catch(() => null),
       ),
+    );
+    console.log(
+      `[clubElo] teams loaded:`,
+      teams.map((t) => (t && t.players ? `players=${toArray(t.players).length}` : "null")),
     );
 
     const playerMap = new Map();
