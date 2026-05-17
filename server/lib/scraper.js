@@ -1,4 +1,5 @@
 const { parse, resolve } = require("url");
+const https = require("https");
 
 const R = require("ramda");
 const ical = require("ical-generator");
@@ -719,11 +720,24 @@ function eloHistory({ url }) {
   });
 }
 
+function httpsGet(url) {
+  return new Promise((resolvePromise, reject) => {
+    https
+      .get(url, (response) => {
+        let data = "";
+        response.setEncoding("utf8");
+        response.on("data", (chunk) => (data += chunk));
+        response.on("end", () => resolvePromise(data));
+      })
+      .on("error", reject);
+  });
+}
+
 async function teamPortraitsForClub(groupHref, clubId) {
   const url = resolve(host, groupHref);
   console.log(`[teamPortraitsForClub] start clubId=${clubId} url=${url}`);
   try {
-    const html = await fetch(url).then((r) => r.text());
+    const html = await httpsGet(url);
     const rows = html.match(/<tr\b[\s\S]*?<\/tr>/gi) || [];
     const clubMarker = `clubInfoDisplay?club=${clubId}`;
     const portraitRegex = /href="([^"]*teamPortrait\?[^"]*)"/gi;
