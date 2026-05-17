@@ -799,6 +799,7 @@ function clubElo(id) {
           delta: Math.round((endElo - startElo) * 10) / 10,
           startDate: eloData.startDate,
           endDate: eloData.endDate,
+          series: eloData.data,
         };
       }),
     );
