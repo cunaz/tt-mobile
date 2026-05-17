@@ -721,31 +721,25 @@ function eloHistory({ url }) {
 
 function teamPortraitsForClub(groupHref, clubId) {
   return new Promise((res) => {
+    const result = [];
     osmosis
       .get(resolve(host, groupHref))
+      .find("tr")
       .set({
-        rows: osmosis.find("tr").set({
-          links: osmosis.find("a").set({ href: "@href" }),
-        }),
+        links: osmosis.find("a").set({ href: "@href" }),
       })
       .error(error("scraping error in teamPortraitsForClub, continuing anyway"))
-      .data((data) => {
-        const result = [];
-        toArray(data && data.rows).forEach((row) => {
-          const hrefs = toArray(row.links)
-            .map((l) => l && l.href)
-            .filter(Boolean);
-          if (
-            hrefs.some((h) => h.includes(`clubInfoDisplay?club=${clubId}`))
-          ) {
-            hrefs
-              .filter((h) => h.includes("teamPortrait?"))
-              .forEach((h) => result.push(h));
-          }
-        });
-        res([...new Set(result)]);
+      .data((row) => {
+        const hrefs = toArray(row && row.links)
+          .map((l) => l && l.href)
+          .filter(Boolean);
+        if (hrefs.some((h) => h.includes(`clubInfoDisplay?club=${clubId}`))) {
+          hrefs
+            .filter((h) => h.includes("teamPortrait?"))
+            .forEach((h) => result.push(h));
+        }
       })
-      .done(() => res([]));
+      .done(() => res([...new Set(result)]));
   });
 }
 
