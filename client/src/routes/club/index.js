@@ -94,7 +94,7 @@ const Teams = ({ name, teams }) => (
         </tr>
       </thead>
       <tbody>
-        {teams.map((team) => (
+        {(teams || []).map((team) => (
           <LinkRow key={team.href} href={clientHref(team.href)}>
             <td>{team.name}</td>
             <td>{team.league}</td>
