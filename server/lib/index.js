@@ -40,7 +40,7 @@ jdenticon.configure({
   backColor: "#0000",
 });
 
-app.use(helmet());
+app.use(helmet({ hsts: env === "development" ? false : undefined }));
 app.use(compression());
 app.use(cors());
 app.use(
