@@ -721,21 +721,28 @@ function eloHistory({ url }) {
 
 async function teamPortraitsForClub(groupHref, clubId) {
   const url = resolve(host, groupHref);
+  console.log(`[teamPortraitsForClub] start clubId=${clubId} url=${url}`);
   try {
     const html = await fetch(url).then((r) => r.text());
     const rows = html.match(/<tr\b[\s\S]*?<\/tr>/gi) || [];
     const clubMarker = `clubInfoDisplay?club=${clubId}`;
     const portraitRegex = /href="([^"]*teamPortrait\?[^"]*)"/gi;
     const portraits = [];
+    let matched = 0;
     rows.forEach((row) => {
       if (!row.includes(clubMarker)) return;
+      matched++;
       for (const m of row.matchAll(portraitRegex)) {
         portraits.push(m[1].replace(/&amp;/g, "&"));
       }
     });
-    return [...new Set(portraits)];
+    const unique = [...new Set(portraits)];
+    console.log(
+      `[teamPortraitsForClub] done clubId=${clubId} htmlLen=${html.length} rows=${rows.length} matched=${matched} portraits=${unique.length}`,
+    );
+    return unique;
   } catch (e) {
-    console.error("teamPortraitsForClub failed", url, e.message);
+    console.error("[teamPortraitsForClub] failed", url, e.message);
     return [];
   }
 }
