@@ -720,16 +720,20 @@ function eloHistory({ url }) {
 }
 
 function teamPortraitsForClub(groupHref, clubId) {
+  const url = resolve(host, groupHref);
+  console.log(`[teamPortraitsForClub] start clubId=${clubId} url=${url}`);
   return new Promise((res) => {
     const result = [];
+    let rowCount = 0;
     osmosis
-      .get(resolve(host, groupHref))
+      .get(url)
       .find("tr")
       .set({
         links: osmosis.find("a").set({ href: "@href" }),
       })
       .error(error("scraping error in teamPortraitsForClub, continuing anyway"))
       .data((row) => {
+        rowCount++;
         const hrefs = toArray(row && row.links)
           .map((l) => l && l.href)
           .filter(Boolean);
@@ -739,7 +743,13 @@ function teamPortraitsForClub(groupHref, clubId) {
             .forEach((h) => result.push(h));
         }
       })
-      .done(() => res([...new Set(result)]));
+      .done(() => {
+        const unique = [...new Set(result)];
+        console.log(
+          `[teamPortraitsForClub] done clubId=${clubId} rows=${rowCount} portraits=${unique.length} url=${url}`,
+        );
+        res(unique);
+      });
   });
 }
 
