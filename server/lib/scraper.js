@@ -721,32 +721,26 @@ function eloHistory({ url }) {
 
 function teamPortraitsForClub(groupHref, clubId) {
   const url = resolve(host, groupHref);
-  console.log(`[teamPortraitsForClub] start clubId=${clubId} url=${url}`);
   return new Promise((res) => {
     const result = [];
-    let rowCount = 0;
+    let matchedRows = 0;
     osmosis
       .get(url)
       .find("tr")
       .set({
-        links: osmosis.find("a").set({ href: "@href" }),
+        clubHref: `a[href*="clubInfoDisplay?club=${clubId}"]@href`,
+        portraitHref: 'a[href*="teamPortrait?"]@href',
       })
-      .error(error("scraping error in teamPortraitsForClub, continuing anyway"))
       .data((row) => {
-        rowCount++;
-        const hrefs = toArray(row && row.links)
-          .map((l) => l && l.href)
-          .filter(Boolean);
-        if (hrefs.some((h) => h.includes(`clubInfoDisplay?club=${clubId}`))) {
-          hrefs
-            .filter((h) => h.includes("teamPortrait?"))
-            .forEach((h) => result.push(h));
+        if (row && row.clubHref && row.portraitHref) {
+          matchedRows++;
+          result.push(row.portraitHref);
         }
       })
       .done(() => {
         const unique = [...new Set(result)];
         console.log(
-          `[teamPortraitsForClub] done clubId=${clubId} rows=${rowCount} portraits=${unique.length} url=${url}`,
+          `[teamPortraitsForClub] clubId=${clubId} matchedRows=${matchedRows} portraits=${unique.length} url=${url}`,
         );
         res(unique);
       });
