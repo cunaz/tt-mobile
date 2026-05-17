@@ -719,13 +719,43 @@ function eloHistory({ url }) {
   });
 }
 
+function teamPortraitsForClub(groupHref, clubId) {
+  return new Promise((res) => {
+    osmosis
+      .get(resolve(host, groupHref))
+      .find("#content")
+      .set({
+        portraits: osmosis
+          .find(
+            `tr:has(a[href*="clubInfoDisplay?club=${clubId}"]) a[href*="teamPortrait?"]`,
+          )
+          .set({ href: "@href" }),
+      })
+      .error(error("scraping error in teamPortraitsForClub, continuing anyway"))
+      .data((d) => {
+        const hrefs = toArray(d && d.portraits)
+          .map((p) => p && p.href)
+          .filter(Boolean);
+        res([...new Set(hrefs)]);
+      })
+      .done(() => res([]));
+  });
+}
+
 function clubElo(id) {
   return clubTeams(id).then(async (data) => {
-    const teamHrefs = (data.teams || []).map((t) => t.href).filter(Boolean);
+    const groupHrefs = (data.teams || []).map((t) => t.href).filter(Boolean);
+
+    const portraitHrefArrays = await Promise.all(
+      groupHrefs.map((href) =>
+        teamPortraitsForClub(denormalize(href), id).catch(() => []),
+      ),
+    );
+    const portraitHrefs = [...new Set(portraitHrefArrays.flat())];
 
     const teams = await Promise.all(
-      teamHrefs.map((href) =>
-        team({ url: denormalize(href) }).catch(() => null),
+      portraitHrefs.map((href) =>
+        team({ url: href }).catch(() => null),
       ),
     );
 
