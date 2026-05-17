@@ -746,6 +746,9 @@ async function teamPortraitsForClub(groupHref, clubId) {
     rows.forEach((row) => {
       if (!row.includes(clubMarker)) return;
       matched++;
+      if (matched === 1) {
+        console.log(`[teamPortraitsForClub] sample row:`, row.slice(0, 800));
+      }
       for (const m of row.matchAll(portraitRegex)) {
         portraits.push(m[1].replace(/&amp;/g, "&"));
       }
