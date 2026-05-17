@@ -46,7 +46,7 @@ const extractTime = (obj) => ({
 
 const formatTime = (obj) => ({
   ...obj,
-  time: obj.time.split(" ")[0],
+  time: obj.time ? obj.time.split(" ")[0] : "",
 });
 
 // strip "/cgi-bin/WebObjects/nuLigaTTCH.woa/wa/" from URL
