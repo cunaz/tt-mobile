@@ -221,9 +221,10 @@ function league({ url }) {
           clubs: toArray(data.clubs)
             .map((club) => ({
               ...club,
-              score: club.score.startsWith("zurückgezogen")
-                ? "-:-"
-                : club.score,
+              score:
+                club.score && club.score.startsWith("zurückgezogen")
+                  ? "-:-"
+                  : club.score || "",
               promotion: parsePromotion(club.promotion),
               games: club.games || "",
               balance: club.balance || "",
