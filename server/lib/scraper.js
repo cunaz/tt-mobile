@@ -319,10 +319,13 @@ function clubTeams(id) {
       .data((data) => {
         const name = splitTitle(data.title)[0];
         models.Club.forge({ id })
-          .save({ name })
-          .catch(() => {
-            models.Club.forge().save({ id, name });
-          });
+          .fetch({ require: false })
+          .then((existing) =>
+            existing
+              ? existing.save({ name }, { patch: true })
+              : models.Club.forge().save({ id, name }),
+          )
+          .catch(() => {});
 
         res({
           name,
@@ -407,6 +410,7 @@ function team({ url, format }, expressRes) {
         const games = toArray(data.games)
           .map(simplifyLinks)
           .map(formatTime)
+          .filter((game) => game.guest && game.home)
           .map((game) => ({
             ...game,
             opponent: game.guest.includes(data.club) ? game.home : game.guest,
